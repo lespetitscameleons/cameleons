@@ -34,40 +34,40 @@ def main():
         reader = csv.DictReader(f, delimiter='\t')
         for line in reader:
             key = line['family'].replace(' ', '').lower() + '_' + line['name'].replace(' ', '').lower()
-            payments[key] = {'name': line['name'], 'family': line['family'], 'status': 'PAID'}
+            payments[key] = {'name': line['name'], 'family': line['family'], 'status': line['status']}
 
     pupils = defaultdict(dict)
     with open(options.list, "U") as f:
         reader = csv.DictReader(f, delimiter='\t')
         for line in reader:
             key = line['family'].replace(' ', '').lower() + '_' + line['name'].replace(' ', '').lower()
-            pupils[key] = {'name': line['name'], 'family': line['family'], 'status': payments.get(key, 'NOT PAID')}
+            pupils[key] = {'name': line['name'], 'family': line['family'], 'status': payments.get(key, 'NOT PAID'), 'email1': line['email1'], 'email2': line['email2']}
 
     with open(options.report, "w") as f:
         f.write('--------------------------------------------------------------------------------\n')
-        f.write('-- Pupils in class without payment status\n')
+        f.write('-- Pupils in class without payment status information\n')
         f.write('--------------------------------------------------------------------------------\n')
         ordered_pupils = sorted(pupils.keys())
         for key in ordered_pupils:
             value = pupils[key]
             if value['status'] == 'NOT PAID':
-                f.write("%s\t%s\t%s\n" % (value['family'], value['name'], value['status']))
+                f.write("%s\t%s\t%s\t%s\t%s\n" % (value['family'].title(), value['name'].title(), value['email1'], value['email2'], value['status']))
         f.write('\n')
         f.write('--------------------------------------------------------------------------------\n')
-        f.write('-- Pupils in class with payment status\n')
+        f.write('-- Pupils in class with payment status information\n')
         f.write('--------------------------------------------------------------------------------\n')
         for key in ordered_pupils:
             value = pupils[key]
             if not value['status'] == 'NOT PAID':
-                f.write("%s\t%s\t%s\n" % (value['family'], value['name'], value['status']['status']))
+                f.write("%s\t%s\t%s\t%s\t%s\n" % (value['family'].title(), value['name'].title(), value['email1'], value['email2'], value['status']['status']))
         f.write('\n')
         f.write('--------------------------------------------------------------------------------\n')
         f.write('-- Pupils not in class \n')
         f.write('--------------------------------------------------------------------------------\n')
-        for key in ordered_pupils:
-            value = pupils[key]
-            if not pupils[key]:
-                f.write("%s\t%s\t%s\t%s\n" % (value['family'], value['name'], 'NOT IN CLASS', value['status']))
+        for key in payments:
+            value = payments[key]
+            if key not in pupils.keys():
+                f.write("%s\t%s\t%s\t%s\n" % (value['family'].title(), value['name'].title(), 'NOT IN CLASS', value['status']))
 
 
 if __name__ == '__main__':
