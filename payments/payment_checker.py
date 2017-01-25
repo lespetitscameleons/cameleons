@@ -16,8 +16,8 @@ def main():
 
     # get the options
     parser = argparse.ArgumentParser(description='Simple script to check if all pupils have paid.')
-    parser.add_argument("--status", dest="status", action="store", help="Tab delimited file with 2 columns: [name, family] of pupils who have paid (e.g. payment_status.txt)", required=True)
-    parser.add_argument("--list", dest="list", action="store", help="Tab delimited file with 2 columns: [name, family] of all pupils in class (e.g. pupil_list.txt)", required=True)
+    parser.add_argument("--status", dest="status", action="store", help="csv file with 3 columns: [family,option,nb] of pupils who have paid (e.g. payment_status.txt)", required=True)
+    parser.add_argument("--list", dest="list", action="store", help="csv file with 4 columns: [family,option,nb,status] of all pupils in class (e.g. pupil_list.txt)", required=True)
     parser.add_argument("--report", dest="report", action="store", help="Output file to store report (e.g. payment_report.txt)", required=True)
     options = parser.parse_args()
 
@@ -31,45 +31,40 @@ def main():
 
     payments = defaultdict(dict)
     with open(options.status, "U") as f:
-        reader = csv.DictReader(f, delimiter='\t')
+        reader = csv.DictReader(f, delimiter=',')
         for line in reader:
-            key = line['family'].replace(' ', '').lower() + '_' + line['name'].replace(' ', '').lower()
-            payments[key] = {'name': line['name'], 'family': line['family'], 'status': line['status']}
+            key = line['family'].replace(' ', '').lower()
+            payments[key] = {'family': line['family'], 'status': line['status'], 'nb': line['nb'], 'option': line['option']}
 
     pupils = defaultdict(dict)
     with open(options.list, "U") as f:
-        reader = csv.DictReader(f, delimiter='\t')
+        reader = csv.DictReader(f, delimiter=',')
         for line in reader:
-            key = line['family'].replace(' ', '').lower() + '_' + line['name'].replace(' ', '').lower()
-            pupils[key] = {'name': line['name'], 'family': line['family'], 'status': payments.get(key, 'NOT PAID'), 'email1': line['email1'], 'email2': line['email2']}
+            key = line['family'].replace(' ', '').lower()
+            pupils[key] = {'family': line['family'], 'status': payments.get(key, 'NOT PAID'), 'nb': line['nb'], 'option': line['option']}
 
     with open(options.report, "w") as f:
-        f.write('--------------------------------------------------------------------------------\n')
-        f.write('-- Pupils in class without payment status information\n')
-        f.write('--------------------------------------------------------------------------------\n')
         ordered_pupils = sorted(pupils.keys())
+        f.write("family,nb,option,amount,status\n")
         for key in ordered_pupils:
             value = pupils[key]
             if value['status'] == 'NOT PAID':
-                f.write("%s\t%s\t%s\t%s\t%s\n" % (value['family'].title(), value['name'].title(), value['email1'], value['email2'], value['status']))
-        f.write('\n')
-        f.write('--------------------------------------------------------------------------------\n')
-        f.write('-- Pupils in class with payment status information\n')
-        f.write('--------------------------------------------------------------------------------\n')
+                f.write("%s,%s,%s,N/A,NOT PAID\n" % (value['family'].title(), value['nb'], value['option']))
         for key in ordered_pupils:
             value = pupils[key]
             if not value['status'] == 'NOT PAID':
-                f.write("%s\t%s\t%s\t%s\t%s\n" % (value['family'].title(), value['name'].title(), value['email1'], value['email2'], value['status']['status']))
-        f.write('\n')
-        f.write('--------------------------------------------------------------------------------\n')
-        f.write('-- Pupils not in class \n')
-        f.write('--------------------------------------------------------------------------------\n')
+                if float(value['status']['status']) > 0:
+                    f.write("%s,%s,%s,%s,NOT PAID\n" % (value['family'].title(), value['nb'], value['option'], value['status']['status']))
+        for key in ordered_pupils:
+            value = pupils[key]
+            if not value['status'] == 'NOT PAID':
+                if float(value['status']['status']) <= 0:
+                    f.write("%s,%s,%s,%s,PAID\n" % (value['family'].title(), value['nb'], value['option'], value['status']['status']))
         for key in payments:
             value = payments[key]
             if key not in pupils.keys():
-                f.write("%s\t%s\t%s\t%s\n" % (value['family'].title(), value['name'].title(), 'NOT IN CLASS', value['status']))
+                f.write("%s,%s,%s,%s,UNKNOWN FAMILY\n" % (value['family'].title(), value['nb'], value['option'], value['status']))
 
 
 if __name__ == '__main__':
     main()
-
