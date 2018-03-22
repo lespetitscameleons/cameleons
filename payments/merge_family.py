@@ -16,7 +16,7 @@ def main():
 
     # get the options
     parser = argparse.ArgumentParser(description='Simple script to merge family members into one record.')
-    parser.add_argument("--list", dest="list", action="store", help="Tab delimited file with 2 columns: [name, family] of all pupils in class (e.g. pupil_list.txt)", required=True)
+    parser.add_argument("--list", dest="list", action="store", help="Tab delimited file with 3 columns: [name, family, location] of all pupils in class (e.g. pupil_list.txt)", required=True)
     options = parser.parse_args()
 
     if not os.path.exists(options.list):
